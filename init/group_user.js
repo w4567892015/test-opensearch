@@ -38,7 +38,23 @@ if (!exists.body) {
       mappings: {
         properties: {
           group_id: { type: "keyword" },
-          users: { type: "keyword" },
+          users: {
+            type: "nested",
+            properties: {
+              user_id: { type: "keyword" },
+              account: { type: "keyword" },
+              email: {
+                type: "text",
+                analyzer: "ngram_analyzer",
+                search_analyzer: "ngram_search_analyzer"
+              },
+              display_name: {
+                type: "text",
+                analyzer: "ngram_analyzer",
+                search_analyzer: "ngram_search_analyzer"
+              }
+            }
+          }
         }
       }
     }
@@ -55,10 +71,10 @@ const users = [
 ];
 
 const groups = [
-  { group_id: 'group_000', users: [users[0].user_id, users[1].user_id] },
-  { group_id: 'group_001', users: [users[1].user_id, users[2].user_id] },
-  { group_id: 'group_002', users: [users[2].user_id, users[3].user_id] },
-  { group_id: 'group_003', users: [users[3].user_id, users[0].user_id] },
+  { group_id: 'group_000', users: [users[0], users[1]] },
+  { group_id: 'group_001', users: [users[1], users[2]] },
+  { group_id: 'group_002', users: [users[2], users[3]] },
+  { group_id: 'group_003', users: [users[3], users[0]] },
 ];
 
 // 建構 bulk API 格式
