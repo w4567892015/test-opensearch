@@ -67,12 +67,12 @@ async function searchDisplayNameByGroupId(groupId, displayNameQuery, page = 1, p
 
 // 範例使用
 (async () => {
-  const groupId = 'group_000'; // 替換為實際的 group_id
-  const displayNameQuery = 'A';
+  const groupId = 'fc045720-9c2d-4917-a66c-5321f62fe6bf'; // 替換為實際的 group_id
+  const displayNameQuery = 'M';
   const page = 1;
   const pageSize = 20;
 
   await searchAll(page, pageSize);
   console.log('--------------------');
-  // await searchDisplayNameByGroupId(groupId, displayNameQuery, page, pageSize);
+  await searchDisplayNameByGroupId(groupId, displayNameQuery, page, pageSize);
 })();

@@ -1,5 +1,7 @@
 import { Client } from '@opensearch-project/opensearch';
 
+import group_user from './data/group_user.json' assert { type: "json" };
+
 const client = new Client({ node: 'http://localhost:9200' });
 
 const exists = await client.indices.exists({ index: 'group_user_index' });
@@ -63,24 +65,10 @@ if (!exists.body) {
 
 const bulkBody = [];
 
-const users = [
-  { user_id: '1', account:'1_extned_vs@gmail.com', email: '', display_name: 'Andy' },
-  { user_id: '2', account:'test@gmail.com', email: 'test@gmail.com', display_name: 'Test' },
-  { user_id: '3', account:'test1@gmail.com', email: 'test1@gmail.com', display_name: '王小明' },
-  { user_id: '4', account:'test2@gmail.com', email: 'test2@gmail.com', display_name: '王大華' },
-];
-
-const groups = [
-  { group_id: 'group_000', users: [users[0], users[1]] },
-  { group_id: 'group_001', users: [users[1], users[2]] },
-  { group_id: 'group_002', users: [users[2], users[3]] },
-  { group_id: 'group_003', users: [users[3], users[0]] },
-];
-
 // 建構 bulk API 格式
-groups.forEach(group => {
-  bulkBody.push({ index: { _index: 'group_user_index', _id: group.group_id } }); // 操作動作和ID
-  bulkBody.push(group); // 真實資料
+group_user.forEach(group_user => {
+  bulkBody.push({ index: { _index: 'group_user_index', _id: group_user.group_id } }); // 操作動作和ID
+  bulkBody.push(group_user); // 真實資料
 });
 
 const response = await client.bulk({
