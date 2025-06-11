@@ -7,83 +7,68 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const TOTAL_ROWS = 10; // Number of rows to generate
+const TOTAL_USERS = 10;    // 產生 10 個 user
+const TOTAL_GROUPS = 5;    // 產生 5 個 group
 
 const root = path.join(__dirname, 'data');
-
 if (!fs.existsSync(root)) fs.mkdirSync(root, { recursive: true });
 
-const accountStream = fs.createWriteStream(path.join(root, 'users.json'));
+const userStream = fs.createWriteStream(path.join(root, 'users.json'));
 const groupStream = fs.createWriteStream(path.join(root, 'groups.json'));
+const groupUserStream = fs.createWriteStream(path.join(root, 'group_user.json'));
 
-function generateAccountObj(opts) {
-  const { count, id } = opts;
-  const account = `user_${count}@example.com`;
-  const email = account;
-  const displayName = faker.person.middleName();
+// 產生所有 user
+const users = Array.from({ length: TOTAL_USERS }).map((_, i) => ({
+  id: randomUUID(),
+  account: `user_${i}@example.com`,
+  email: `user_${i}@example.com`,
+  displayName: faker.person.fullName(),
+}));
 
+// 寫入 users.json
+userStream.write('[\n');
+users.forEach((user, i) => {
+  userStream.write(JSON.stringify(user) + (i < users.length - 1 ? ',\n' : '\n'));
+});
+userStream.write(']\n');
+userStream.end();
+
+// 產生 group
+const groups = Array.from({ length: TOTAL_GROUPS }).map(() => ({
+  id: randomUUID(),
+  name: faker.company.name(),
+}));
+
+// 寫入 groups.json
+groupStream.write('[\n');
+groups.forEach((group, i) => {
+  groupStream.write(JSON.stringify(group) + (i < groups.length - 1 ? ',\n' : '\n'));
+});
+groupStream.write(']\n');
+groupStream.end();
+
+// 產生 group_user 關聯，每組隨機分配 USERS_PER_GROUP 個 user
+const groupUsers = groups.map(group => {
+  // 隨機決定本組人數 (1 ~ TOTAL_USERS)
+  const userCount = faker.number.int({ min: 1, max: TOTAL_USERS });
+  const shuffled = faker.helpers.shuffle(users);
   return {
-    id,
-    account,
-    email,
-    displayName,
+    group_id: group.id,
+    users: shuffled.slice(0, userCount).map(u => ({
+      user_id: u.id,
+      account: u.account,
+      email: u.email,
+      display_name: u.displayName,
+    })),
   };
-}
+});
 
-function generateGroupObj() {
-  const name = faker.company.name();
+// 寫入 group_user.json
+groupUserStream.write('[\n');
+groupUsers.forEach((gu, i) => {
+  groupUserStream.write(JSON.stringify(gu) + (i < groupUsers.length - 1 ? ',\n' : '\n'));
+});
+groupUserStream.write(']\n');
+groupUserStream.end();
 
-  return {
-    id: randomUUID(),
-    name,
-  };
-}
-
-async function generateJSONFiles() {
-  let i = 0;
-  accountStream.write('[\n');
-  groupStream.write('[\n');
-
-  console.log('Generating account JSON file...');
-
-  function writeChunk() {
-    let ok = true;
-    let ok1 = true;
-
-    while (i < TOTAL_ROWS && ok && ok1) {
-      const opts = {
-        count: i,
-        id: randomUUID(),
-      };
-
-      const accountObj = generateAccountObj(opts);
-      const groupObj = generateGroupObj();
-
-      const accountStr = JSON.stringify(accountObj) + (i < TOTAL_ROWS - 1 ? ',\n' : '\n');
-      const greoupStr = JSON.stringify(groupObj) + (i < TOTAL_ROWS - 1 ? ',\n' : '\n');
-
-      ok = accountStream.write(accountStr);
-      ok1 = groupStream.write(greoupStr);
-
-      i++;
-      if (i % 100000 === 0) {
-        console.log(`Wrote ${i.toLocaleString()} rows...`);
-      }
-    }
-
-    if (i < TOTAL_ROWS) {
-      if (!ok) accountStream.once('drain', writeChunk);
-      if (!ok1) groupStream.once('drain', writeChunk);
-    } else {
-      accountStream.write(']\n');
-      groupStream.write(']\n');
-      accountStream.end();
-      groupStream.end();
-      console.log('✅ Finished generating both JSON files.');
-    }
-  }
-
-  writeChunk();
-}
-
-generateJSONFiles();
+console.log('✅ Finished generating users.json, groups.json, and group_user.json');
