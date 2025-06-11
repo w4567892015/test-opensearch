@@ -1,6 +1,7 @@
 {
   "type": "module",
   "dependencies": {
+    "@faker-js/faker": "^9.8.0",
     "@opensearch-project/opensearch": "^3.5.1"
   }
 }
