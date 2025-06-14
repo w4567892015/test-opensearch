@@ -1,6 +1,29 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: postgres
+    volumes:
+      - ./init/data:/docker-entrypoint-initdb.d/data:ro
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    networks:
+      - opensearch-net
+
   opensearch:
     image: opensearchproject/opensearch
     container_name: opensearch
