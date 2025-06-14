@@ -6,6 +6,8 @@ CREATE DATABASE user_test;
 
 CREATE DATABASE group_test;
 
+CREATE DATABASE combine_test;
+
 -- Connect to user_test database
 \c user_test
 
@@ -56,8 +58,35 @@ FROM '/docker-entrypoint-initdb.d/data/group.csv' WITH (FORMAT csv, HEADER false
 COPY "group_user"(group_id, user_id)
 FROM '/docker-entrypoint-initdb.d/data/group_user.csv' WITH (FORMAT csv, HEADER false);
 
--- Step 4: Add the foreign key constraint separately
+-- Add the foreign key constraint separately
 ALTER TABLE public.group_user
 ADD CONSTRAINT fk_group_user
 FOREIGN KEY (group_id) REFERENCES public.group(id) ON DELETE CASCADE;
 
+-- Connect to group_test database
+\c combine_test
+
+-- Enable FDW extension
+CREATE EXTENSION IF NOT EXISTS "postgres_fdw";
+
+-- Enable the extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 建立 user_test foreign server
+CREATE SERVER IF NOT EXISTS user_test_server
+  FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS (host 'localhost', dbname 'user_test', port '5432');
+
+-- 建立 group_test foreign server
+CREATE SERVER IF NOT EXISTS group_test_server
+  FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS (host 'localhost', dbname 'group_test', port '5432');
+
+-- 建立 user mapping
+CREATE USER MAPPING IF NOT EXISTS FOR CURRENT_USER
+  SERVER user_test_server
+  OPTIONS (user 'admin', password 'admin');
+
+CREATE USER MAPPING IF NOT EXISTS FOR CURRENT_USER
+  SERVER group_test_server
+  OPTIONS (user 'admin', password 'admin');
