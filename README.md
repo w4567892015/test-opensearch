@@ -8,8 +8,7 @@
 .
 ├── init/
 │   ├── data/                # 產生用的 CSV 測試資料
-│   ├── generate_csv.js      # 產生 user/group/group_user CSV 的腳本
-│   └── generate_json.js     # 產生 JSON 測試資料的腳本
+│   └── generate_csv.js      # 產生 user/group/group_user CSV 的腳本
 ├── sql/
 │   ├── init.sql             # PostgreSQL 初始化腳本（建表、匯入資料）
 │   └── fdw.sql              # FDW 與 materialized view 設定
@@ -19,15 +18,26 @@
 
 ## 快速開始
 
-1. **產生測試資料**
-   ```sh
-   node init/generate_csv.js
-   ```
+### 1. 安裝相依套件
+```sh
+npm install
+```
 
-2. **啟動 PostgreSQL（含自動初始化）**
-   ```sh
-   docker-compose up -d
-   ```
+### 2. 產生測試資料
+```sh
+node init/generate_csv.js
+```
+
+### 3. 啟動 PostgreSQL（含自動初始化）
+```sh
+docker-compose up -d
+```
+
+### 4. 匯入資料到 PostgreSQL
+- 預設 docker-compose 啟動時會自動執行 `init.sql`，將 CSV 匯入資料庫。
+
+### 5. （選用）執行 FDW 與 OpenSearch 測試
+- 依需求執行 `sql/fdw.sql` 或進行 OpenSearch 相關操作。
 
 ## 主要功能
 

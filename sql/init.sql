@@ -11,19 +11,27 @@ CREATE DATABASE combine_test;
 -- Connect to user_test database
 \c user_test
 
--- Enable FDW extension
-CREATE EXTENSION IF NOT EXISTS "postgres_fdw";
-
 -- Enable the extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create user table
+-- Create user partitioned table
 CREATE TABLE "user" (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID NOT NULL,
   account VARCHAR(100) NOT NULL,
-  email VARCHAR(255) NOT NULL UNIQUE,
-  display_name VARCHAR(100)
-);
+  email VARCHAR(255) NOT NULL,
+  display_name VARCHAR(100),
+  PRIMARY KEY (id, account)
+) PARTITION BY HASH (id);
+
+-- 建立 10 個分區
+DO $$
+BEGIN
+  FOR i IN 0..9 LOOP
+    EXECUTE format('
+      CREATE TABLE IF NOT EXISTS "user_p%s" PARTITION OF "user"
+      FOR VALUES WITH (MODULUS 10, REMAINDER %s);', i, i);
+  END LOOP;
+END$$;
 
 -- Create user dummy data
 COPY "user"(id, account, email, display_name)
@@ -32,24 +40,42 @@ FROM '/docker-entrypoint-initdb.d/data/user.csv' WITH (FORMAT csv, HEADER false)
 -- Connect to group_test database
 \c group_test
 
--- Enable FDW extension
-CREATE EXTENSION IF NOT EXISTS "postgres_fdw";
-
 -- Enable the extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create group table
+-- Create group partitioned table
 CREATE TABLE "group" (
-  id UUID PRIMARY KEY,
-  name VARCHAR(255)
-);
+  id UUID NOT NULL,
+  name VARCHAR(255),
+  PRIMARY KEY (id)
+) PARTITION BY HASH (id);
 
--- Create group_user table
+-- 建立 10 個分區
+DO $$
+BEGIN
+  FOR i IN 0..9 LOOP
+    EXECUTE format('
+      CREATE TABLE IF NOT EXISTS "group_p%s" PARTITION OF "group"
+      FOR VALUES WITH (MODULUS 10, REMAINDER %s);', i, i);
+  END LOOP;
+END$$;
+
+-- Create group_user partitioned table
 CREATE TABLE "group_user" (
   group_id UUID NOT NULL,
   user_id UUID NOT NULL,
   PRIMARY KEY (group_id, user_id)
-);
+) PARTITION BY HASH (group_id);
+
+-- 建立 10 個分區
+DO $$
+BEGIN
+  FOR i IN 0..9 LOOP
+    EXECUTE format('
+      CREATE TABLE IF NOT EXISTS "group_user_p%s" PARTITION OF "group_user"
+      FOR VALUES WITH (MODULUS 10, REMAINDER %s);', i, i);
+  END LOOP;
+END$$;
 
 -- Create group dummy data
 COPY "group"(id, name)
